@@ -1,0 +1,17 @@
+resources:
+  apps:
+    genie-slack-app:
+      name: "genie-slack-app"
+      source_code_path: "../src"
+      description: "Slack App for communicating with genie apis"
+      config:
+        command:
+          - "python"
+          - SlackBot.py
+        env:
+          - name: "TOKEN_APP"
+            value: ${var.TOKEN_APP}
+          - name: "TOKEN_BOT"
+            value: ${var.TOKEN_BOT}
+          - name: "GENIE_SPACE_ID"
+            value: ${var.GENIE_SPACE_ID}
