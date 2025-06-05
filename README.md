@@ -23,8 +23,8 @@ This repository extends the capabilities of the [Databricks Slack Bot](https://g
    - In databricks.yml, replace the target host with your databricks host url
    - Create a `.env` file in the root of your repository.
    - Add the following environment variables:
-     - `BUNDLE_TOKEN_APP`: Your Slack app token.
-     - `BUNDLE_TOKEN_BOT`: Your Slack bot token.
+     - `BUNDLE_VAR_TOKEN_APP`: Your Slack app token.
+     - `BUNDLE_VAR_TOKEN_BOT`: Your Slack bot token.
      - `BUNDLE_GENIE_SPACE_ID`: The ID of the Genie space you want the Slack app to interface with.
 4. **UC Permission Setup:** Grant the app service principle access to tables set up with your genie room
 

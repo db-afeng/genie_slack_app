@@ -146,7 +146,7 @@ async def message_hello(message, say, client):
             genie_message = await async_genie_create_message(space_id, conv_id, query)
 
         text = format_genie_response(genie_message)
-        print("Query output:", genie_message) 
+        print("Query output:", genie_message)
 
     except TimeoutError as e:
         text=str(e)
