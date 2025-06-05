@@ -1,3 +1,4 @@
+# yaml-language-server: $schema=../bundle_schema.json
 resources:
   apps:
     genie-slack-app:

@@ -17,7 +17,7 @@ import datetime
 local_version = datetime.datetime.utcnow().strftime("%Y%m%d.%H%M%S")
 
 setup(
-    name="demo_hapana_app",
+    name="genie_slack_app",
     # We use timestamp as Local version identifier (https://peps.python.org/pep-0440/#local-version-identifiers.)
     # to ensure that changes to wheel package are picked up when used on all-purpose clusters
     url="https://databricks.com",
