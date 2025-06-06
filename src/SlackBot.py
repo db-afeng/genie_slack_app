@@ -10,11 +10,17 @@ import os
 import asyncio
 from functools import wraps
 
+w = WorkspaceClient()
+genie = w.genie
+space_id = os.environ["GENIE_SPACE_ID"]
+
 def get_slack_auth():
-    # token_app = w.dbutils.secrets.get(scope='slack-bot', key='slack_token_app')
-    # token_bot = w.dbutils.secrets.get(scope='slack-bot', key='slack_token_bot')
-    token_app = os.environ["TOKEN_APP"]
-    token_bot = os.environ["TOKEN_BOT"]
+    if os.environ.get("IS_LOCAL") == 'true': # For local dev
+        token_app = os.environ["TOKEN_APP"]
+        token_bot = os.environ["TOKEN_BOT"]
+    else:
+        token_app = w.dbutils.secrets.get(scope='genie-slack-secret-scope', key='token_app')
+        token_bot = w.dbutils.secrets.get(scope='genie-slack-secret-scope', key='token_bot')
     return token_app, token_bot
 
 def start_slack_client():
@@ -53,13 +59,13 @@ def message_poll(func):
             print(message)
             if message.status.value == "COMPLETED":
                 return result_waiter.result()
-                
+
             elif message.status.value == "FAILED":
-                raise LookupError("Genie failed to return a response") 
+                raise LookupError("Genie failed to return a response")
 
             poll_count += 1
             await asyncio.sleep(wait)
-        raise TimeoutError("Genie did not return a response")  
+        raise TimeoutError("Genie did not return a response")
     return wrapper
 
 @message_poll
@@ -72,7 +78,7 @@ def async_genie_create_message(*args, **kwargs):
 
 def format_genie_response(genie_message: GenieMessage) -> str:
     query_desc = query_code = table_text = None
-    
+
     query = genie_message.attachments[0].query
     text = genie_message.attachments[0].text
 
@@ -100,13 +106,13 @@ def format_genie_response(genie_message: GenieMessage) -> str:
         header = " | ".join(col.ljust(widths[i]) for i, col in enumerate(columns))
         # Create a separator row
         separator = "-|-".join("-" * widths[i] for i in range(len(columns)))
-        
+
         # Build the rows of the table
         rows = [header, separator]
         for row in data_array:
             row_str = " | ".join(str(cell).ljust(widths[i]) for i, cell in enumerate(row))
             rows.append(row_str)
-        
+
         # Wrap the table in triple backticks to format as a code block
 
         table_text =  "```\n" + "\n".join(rows) + "\n```"
@@ -123,9 +129,6 @@ async def delete_message(channel: str, ts: str) -> None:
     except Exception as e:
         print(f"Error deleting message: {e}")
 
-w = WorkspaceClient()
-genie = w.genie
-space_id = os.environ["GENIE_SPACE_ID"]
 conv_tracker = {}
 
 # Listens to incoming messages that contain "hello"
@@ -146,7 +149,7 @@ async def message_hello(message, say, client):
             genie_message = await async_genie_create_message(space_id, conv_id, query)
 
         text = format_genie_response(genie_message)
-        print("Query output:", genie_message) 
+        print("Query output:", genie_message)
 
     except TimeoutError as e:
         text=str(e)

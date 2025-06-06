@@ -1,3 +1,4 @@
+# yaml-language-server: $schema=../bundle_schema.json
 resources:
   apps:
     genie-slack-app:
@@ -9,9 +10,5 @@ resources:
           - "python"
           - SlackBot.py
         env:
-          - name: "TOKEN_APP"
-            value: ${var.TOKEN_APP}
-          - name: "TOKEN_BOT"
-            value: ${var.TOKEN_BOT}
           - name: "GENIE_SPACE_ID"
             value: ${var.GENIE_SPACE_ID}
