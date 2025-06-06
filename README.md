@@ -12,6 +12,7 @@ This repository extends the capabilities of the [Databricks Slack Bot](https://g
 - **Databricks Genie Integration:** Users can now interact with Databricks Genie directly from Slack, enhancing collaboration and workflow efficiency.
 - **Databricks Asset Bundles:** Utilizes Databricks Asset Bundles for streamlined deployment of the Slack app on Databricks Apps.
 - **Slack App Deployment:** Simplifies the process of deploying a Slack app within the Databricks environment.
+- **Secret Scope Setup:** Sets up a secret scope to store Slack app and bot tokens
 
 ## Setup Instructions
 
@@ -26,7 +27,7 @@ This repository extends the capabilities of the [Databricks Slack Bot](https://g
      - `BUNDLE_VAR_TOKEN_APP`: Your Slack app token.
      - `BUNDLE_VAR_TOKEN_BOT`: Your Slack bot token.
      - `BUNDLE_GENIE_SPACE_ID`: The ID of the Genie space you want the Slack app to interface with.
-4. **UC Permission Setup:** Grant the app service principle access to tables set up with your genie room
+4. **UC Permission Setup:** Grant the app service principal access to tables set up with your genie room as well as the room itself and the warehouse to run the room on.
 
 ### Warning
-**Security Consideration:** This is just a proof of concept. Currently, tokens are injected as environment variables, and although they arn't exposed by DABs, Datbricks APPs exposes the environment varibales passed to it by DABs which means they can be accessed in plain text through the Databricks Apps interface. **Proceed with caution** and ideally use tokens from a sandbox Slack environment until a more secure solution is implemented.
+**Experimental DABS Features:** To automate the population of secrets within the secret scope from local environment variables, this DABS project uses [experimental post-deployment script](https://github.com/databricks/cli/pull/632) which may change at any time.
