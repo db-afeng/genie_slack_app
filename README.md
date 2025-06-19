@@ -20,13 +20,16 @@ This repository extends the capabilities of the [Databricks Slack Bot](https://g
 
 1. **Databricks CLI:** Ensure you have the Databricks CLI installed and configured for your workspace. Refer to [Databricks CLI Installation](https://docs.databricks.com/en/dev-tools/cli/install.html) for setup instructions.
 2. **Slack App Creation:** Create a Slack app and obtain necessary credentials. Follow the steps in the [original repository](https://github.com/alex-lopes-databricks/databricks_apps_collection/tree/main/slack-bot) for guidance.
-3. **Environment:**
+3. **Environment:** Set up environment variables for the slack app token, slack bot token and genie space ID to be picked up below. This can be done how you wish but below, I walk through a method that uses a .env file that is loaded by the [Python extension in VSCode](https://code.visualstudio.com/docs/python/environments#:~:text=By%20default%2C%20the%20Python%20extension,(see%20General%20Python%20settings).).
    - In databricks.yml, replace the target host with your databricks host url
    - Create a `.env` file in the root of your repository.
    - Add the following environment variables:
      - `BUNDLE_VAR_TOKEN_APP`: Your Slack app token.
      - `BUNDLE_VAR_TOKEN_BOT`: Your Slack bot token.
-     - `BUNDLE_GENIE_SPACE_ID`: The ID of the Genie space you want the Slack app to interface with.
+     - `BUNDLE_VAR_GENIE_SPACE_ID`: The ID of the Genie space you want the Slack app to interface with.
+
+    It's worth noting. The two env variables TOKEN_APP and TOKEN_BOT is passed through DABS as secrets to be used by the app using dbutils whereas the genie space ID is passed through DABS as a environment variable in the Databricks App's startup to be picked up by the app code.
+
 4. **UC Permission Setup:** Grant the app service principal access to tables set up with your genie room as well as the room itself and the warehouse to run the room on.
 
 ### Warning
