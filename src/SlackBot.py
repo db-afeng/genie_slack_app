@@ -131,7 +131,77 @@ async def delete_message(channel: str, ts: str) -> None:
 
 conv_tracker = {}
 
-# Listens to incoming messages that contain "hello"
+@app.event("assistant_thread_started")
+async def publish_home_view(event, say, client, logger):
+    thread_ts = event["assistant_thread"]["thread_ts"]
+
+    await say(
+        text="Select a Genie room",  # Required fallback
+        thread_ts=thread_ts,
+        blocks=[
+            {
+                "type": "section",
+                "text": {
+                    "type": "mrkdwn",
+                    "text": "Select Genie Room"
+                },
+                "accessory": {
+                    "type": "static_select",
+                    "placeholder": {
+                        "type": "plain_text",
+                        "text": "Genie room name",
+                        "emoji": True
+                    },
+                    "options": [
+                        {
+                            "text": {
+                                "type": "plain_text",
+                                "text": "*plain_text option 0*",
+                                "emoji": True
+                            },
+                            "value": "value-0"
+                        },
+                        {
+                            "text": {
+                                "type": "plain_text",
+                                "text": "*plain_text option 1*",
+                                "emoji": True
+                            },
+                            "value": "value-1"
+                        },
+                        {
+                            "text": {
+                                "type": "plain_text",
+                                "text": "*plain_text option 2*",
+                                "emoji": True
+                            },
+                            "value": "value-2"
+                        }
+                    ],
+                    "action_id": "static_select-action"
+                }
+            },
+            {
+                "type": "section",
+                "text": {
+                    "type": "mrkdwn",
+                    "text": " "
+                },
+                "accessory": {
+                    "type": "button",
+                    "text": {
+                        "type": "plain_text",
+                        "text": "Confirm",
+                        "emoji": True
+                    },
+                    "value": "click_me_123",
+                    "action_id": "button-action"
+                }
+            }
+        ]
+    )
+
+# Listens to incoming messages
 @app.event("message")
 async def message_hello(message, say, client):
     print("Received: ", message, type(message))
