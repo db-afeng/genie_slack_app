@@ -76,3 +76,67 @@ def format_genie_response(genie_message: GenieMessage) -> str:
         table_text =  "```\n" + "\n".join(rows) + "\n```"
     text_result = "\n".join([s for s in [text_content, query_desc, table_text, query_code] if s])
     return text_result
+
+
+def format_genie_selection():
+    """
+    Generates a Slack block for selecting a Genie Room, by fetching all
+    genie spaces using a Databricks Python SDK call and then
+    creating options with room names as text and room IDs as values.
+
+    Returns:
+        list: A list of dictionaries representing the Slack block.
+    """
+
+    genie_rooms = genie.list_spaces() # Fetch genie rooms using the placeholder
+
+    options = []
+    # Iterate through the fetched genie room data
+    for space in genie_rooms.spaces:
+        options.append({
+            "text": {
+                "type": "plain_text",
+                "text": space.title,  # Use genie room name for display text
+                "emoji": True
+            },
+            "value": space.space_id  # Use genie room ID as the value
+        })
+
+    # Construct the complete Slack block as a list of dictionaries
+    slack_block = [
+        {
+            "type": "section",
+            "text": {
+                "type": "mrkdwn",
+                "text": "Select Genie Room"
+            },
+            "accessory": {
+                "type": "static_select",
+                "placeholder": {
+                    "type": "plain_text",
+                    "text": "Genie room name",
+                    "emoji": True
+                },
+                "options": options,  # Insert the dynamically generated options here
+                "action_id": "static_select-action"
+            }
+        },
+        {
+            "type": "section",
+            "text": {
+                "type": "mrkdwn",
+                "text": " "  # Empty text for spacing or layout
+            },
+            "accessory": {
+                "type": "button",
+                "text": {
+                    "type": "plain_text",
+                    "text": "Confirm",
+                    "emoji": True
+                },
+                "value": "click_me_123",  # A static value for the button
+                "action_id": "button-action"
+            }
+        }
+    ]
+    return slack_block
