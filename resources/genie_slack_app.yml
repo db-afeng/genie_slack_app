@@ -8,7 +8,4 @@ resources:
       config:
         command:
           - "python"
-          - SlackBot.py
-        env:
-          - name: "GENIE_SPACE_ID"
-            value: ${var.GENIE_SPACE_ID}
+          - main.py

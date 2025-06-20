@@ -3,5 +3,3 @@ variables:
     description: Slack App Token.
   TOKEN_BOT:
     description: Slack Bot Token.
-  GENIE_SPACE_ID:
-    description: Genie space id.
