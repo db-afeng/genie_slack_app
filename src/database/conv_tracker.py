@@ -1,9 +1,10 @@
 """Conversation tracker operations - handles both in-memory and database storage."""
 import os
 from typing import Optional, Dict
+from sqlalchemy import text
 from sqlalchemy.exc import SQLAlchemyError
 from database.connection import get_session, get_engine
-from database.models import Base, ConversationTracker
+from database.models import Base, ConversationTracker, SCHEMA_NAME
 
 
 # In-memory tracker for local development
@@ -16,12 +17,20 @@ def is_local_mode():
 
 
 def init_database():
-    """Initialize the database tables. Only called in non-local mode."""
+    """Initialize the database schema and tables. Only called in non-local mode."""
     if not is_local_mode():
         try:
             engine = get_engine()
+            
+            # Create the schema if it doesn't exist
+            with engine.connect() as conn:
+                conn.execute(text(f"CREATE SCHEMA IF NOT EXISTS {SCHEMA_NAME}"))
+                conn.commit()
+                print(f"Schema '{SCHEMA_NAME}' ensured to exist")
+            
+            # Create all tables in the schema
             Base.metadata.create_all(bind=engine)
-            print("Database tables initialized successfully")
+            print(f"Database tables initialized successfully in schema '{SCHEMA_NAME}'")
         except Exception as e:
             print(f"Error initializing database: {e}")
             raise

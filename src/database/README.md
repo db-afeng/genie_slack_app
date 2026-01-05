@@ -115,16 +115,26 @@ update_conversation_id("thread_123", "conv_789")
 
 ## Database Schema
 
+The application uses a dedicated schema `genie_app` to organize its tables separately from other database objects.
+
+**Schema:** `genie_app`
+
 ```sql
-CREATE TABLE conversation_tracker (
-    thread_ts STRING PRIMARY KEY,
-    conversation_id STRING,
-    genie_room_id STRING NOT NULL,
-    genie_room_name STRING NOT NULL,
+-- Schema is automatically created if it doesn't exist
+CREATE SCHEMA IF NOT EXISTS genie_app;
+
+-- Conversation tracker table
+CREATE TABLE genie_app.conversation_tracker (
+    thread_ts VARCHAR PRIMARY KEY,
+    conversation_id VARCHAR,
+    genie_room_id VARCHAR NOT NULL,
+    genie_room_name VARCHAR NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 ```
+
+The schema and tables are automatically created when the application starts (in non-local mode) via the `init_database()` function.
 
 ## Error Handling
 

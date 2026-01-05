@@ -4,6 +4,9 @@ from sqlalchemy.ext.declarative import declarative_base
 
 Base = declarative_base()
 
+# Dedicated schema for the Genie Slack App
+SCHEMA_NAME = "genie_app"
+
 
 class ConversationTracker(Base):
     """
@@ -18,6 +21,7 @@ class ConversationTracker(Base):
         updated_at: Timestamp when the record was last updated
     """
     __tablename__ = "conversation_tracker"
+    __table_args__ = {'schema': SCHEMA_NAME}
     
     thread_ts = Column(String, primary_key=True)
     conversation_id = Column(String, nullable=True)
