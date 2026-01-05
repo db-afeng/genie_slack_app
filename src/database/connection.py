@@ -3,8 +3,10 @@ import os
 from urllib.parse import quote_plus
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, Session
+from databricks.sdk import WorkspaceClient
 
-# Global engine and session maker
+# Global workspace client and session maker
+w = WorkspaceClient()
 _engine = None
 _SessionLocal = None
 
@@ -16,10 +18,11 @@ def get_lakebase_connection_string():
     In production, Databricks automatically populates these environment variables:
     - PGHOST: Database host
     - PGUSER: Service Principal Client ID
-    - PGPASSWORD: OAuth token (auto-rotated)
     - PGDATABASE: Database name
     - PGPORT: Database port (default: 5432)
     - PGSSLMODE: SSL mode (default: require)
+    
+    The OAuth token is retrieved from the Databricks SDK and used as the password.
     
     Returns:
         str: SQLAlchemy connection string for Lakebase (PostgreSQL)
@@ -27,7 +30,6 @@ def get_lakebase_connection_string():
     # Get connection details from environment variables
     host = os.getenv("PGHOST")
     username = os.getenv("PGUSER")
-    password = os.getenv("PGPASSWORD")
     database = os.getenv("PGDATABASE")
     port = os.getenv("PGPORT", "5432")
     sslmode = os.getenv("PGSSLMODE", "require")
@@ -36,7 +38,6 @@ def get_lakebase_connection_string():
     required_vars = {
         "PGHOST": host,
         "PGUSER": username,
-        # "PGPASSWORD": password,
         "PGDATABASE": database
     }
     
@@ -48,13 +49,15 @@ def get_lakebase_connection_string():
             "or manually set for local development."
         )
     
-    # URL encode the username and password in case they contain special characters
-    username_encoded = quote_plus(username)
-    password_encoded = quote_plus(password)
+    # Get OAuth token from Databricks SDK
+    token = w.config.oauth_token().access_token
     
-    # Construct the PostgreSQL connection string
-    # connection_string = f"postgresql://{username_encoded}:{password_encoded}@{host}:{port}/{database}?sslmode={sslmode}"
-    connection_string = f"postgresql://{username_encoded}@{host}:{port}/{database}?sslmode={sslmode}"
+    # URL encode the username and token in case they contain special characters
+    username_encoded = quote_plus(username)
+    token_encoded = quote_plus(token)
+    
+    # Construct the PostgreSQL connection string with OAuth token as password
+    connection_string = f"postgresql://{username_encoded}:{token_encoded}@{host}:{port}/{database}?sslmode={sslmode}"
 
     return connection_string
 

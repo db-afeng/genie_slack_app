@@ -52,7 +52,7 @@ Provides a unified API for conversation tracking that works in both local and pr
 ### Dependencies
 The following packages are required (already added to `requirements.txt`):
 - `SQLAlchemy==2.0.45`
-- `psycopg2-binary==2.9.10` (PostgreSQL driver)
+- `psycopg==3.2.3` (PostgreSQL driver)
 
 ### Lakebase Configuration
 
@@ -72,22 +72,28 @@ The connection uses PostgreSQL protocol via environment variables:
 **Environment Variables (automatically set by Databricks in production):**
 - `PGHOST`: Database host
 - `PGUSER`: Service Principal Client ID (automatically set to the app's identity)
-- `PGPASSWORD`: OAuth token (automatically rotated by Databricks)
 - `PGDATABASE`: Database name
 - `PGPORT`: Database port (default: 5432)
 - `PGSSLMODE`: SSL mode (default: require)
+
+**Authentication:**
+The connection uses OAuth token authentication retrieved from the Databricks SDK:
+```python
+token = w.config.oauth_token().access_token
+```
+This token is automatically managed and rotated by Databricks.
 
 **For Local Development:**
 Set these environment variables manually in your `.env` file or shell:
 ```bash
 export PGHOST="instance-15dc10d7-b8c2-4f76-bb9e-c1565eddc6a0.database.azuredatabricks.net"
 export PGUSER="your-service-principal-id"
-export PGPASSWORD="your-password-or-token"
 export PGDATABASE="databricks_postgres"
 export PGPORT="5432"
 export PGSSLMODE="require"
 export IS_LOCAL="true"
 ```
+Note: The OAuth token is retrieved automatically from the Databricks SDK, so no manual password configuration is needed.
 
 ### Usage in Code
 ```python
