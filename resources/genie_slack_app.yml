@@ -9,3 +9,9 @@ resources:
         command:
           - "python"
           - main.py
+    resources:
+      - name: genie-slack-lakebase
+        database:
+          database_name: ${resources.database_instances.genie-slack-app.name}
+          instance_name: ${resources.database_instances.genie-slack-app.id}
+          permissions: CAN_CONNECT_AND_CREATE
