@@ -1,8 +1,8 @@
 """Database connection management for Databricks Lakebase."""
 import os
-from sqlalchemy import create_engine, MetaData
+from urllib.parse import quote_plus
+from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, Session
-from databricks.sdk import WorkspaceClient
 
 # Global engine and session maker
 _engine = None
@@ -13,31 +13,49 @@ def get_lakebase_connection_string():
     """
     Get the Databricks Lakebase PostgreSQL connection string.
     
+    In production, Databricks automatically populates these environment variables:
+    - PGHOST: Database host
+    - PGUSER: Service Principal Client ID
+    - PGPASSWORD: OAuth token (auto-rotated)
+    - PGDATABASE: Database name
+    - PGPORT: Database port (default: 5432)
+    - PGSSLMODE: SSL mode (default: require)
+    
     Returns:
         str: SQLAlchemy connection string for Lakebase (PostgreSQL)
     """
-    # Lakebase connection details
-    username = "alex.feng@databricks.com"
-    host = "instance-15dc10d7-b8c2-4f76-bb9e-c1565eddc6a0.database.azuredatabricks.net"
-    port = "5432"
-    database = "databricks_postgres"
+    # Get connection details from environment variables
+    host = os.getenv("PGHOST")
+    username = os.getenv("PGUSER")
+    password = os.getenv("PGPASSWORD")
+    database = os.getenv("PGDATABASE")
+    port = os.getenv("PGPORT", "5432")
+    sslmode = os.getenv("PGSSLMODE", "require")
     
-    # Get password from environment or secrets
-    if os.environ.get("IS_LOCAL") == 'true':
-        # For local dev, use environment variable
-        password = os.environ.get("PGPASSWORD")
-        if not password:
-            raise ValueError("PGPASSWORD environment variable not set for local development")
-    else:
-        # In Databricks, get from secrets
-        w = WorkspaceClient()
-        password = w.dbutils.secrets.get(scope='genie-slack-secret-scope', key='pgpassword')
+    # Validate required environment variables
+    required_vars = {
+        "PGHOST": host,
+        "PGUSER": username,
+        # "PGPASSWORD": password,
+        "PGDATABASE": database
+    }
+    
+    missing_vars = [var for var, value in required_vars.items() if not value]
+    if missing_vars:
+        raise ValueError(
+            f"Missing required environment variables: {', '.join(missing_vars)}. "
+            "These should be automatically set by Databricks in production, "
+            "or manually set for local development."
+        )
+    
+    # URL encode the username and password in case they contain special characters
+    username_encoded = quote_plus(username)
+    password_encoded = quote_plus(password)
     
     # Construct the PostgreSQL connection string
-    # URL encode the username (@ -> %40)
-    username_encoded = username.replace("@", "%40")
-    connection_string = f"postgresql://{username_encoded}:{password}@{host}:{port}/{database}?sslmode=require"
-    
+    # connection_string = f"postgresql://{username_encoded}:{password_encoded}@{host}:{port}/{database}?sslmode={sslmode}"
+    connection_string = f"postgresql://{username_encoded}@{host}:{port}/{database}?sslmode={sslmode}"
+
     return connection_string
 
 

@@ -66,15 +66,28 @@ resources:
 ```
 
 **Connection Details:**
-- Protocol: PostgreSQL
-- Host: `instance-15dc10d7-b8c2-4f76-bb9e-c1565eddc6a0.database.azuredatabricks.net`
-- Port: 5432
-- Database: `databricks_postgres`
-- SSL Mode: Required
 
-**Authentication:**
-- Local Development: Set `PGPASSWORD` environment variable
-- Production: Password retrieved from secret scope `genie-slack-secret-scope` with key `pgpassword`
+The connection uses PostgreSQL protocol via environment variables:
+
+**Environment Variables (automatically set by Databricks in production):**
+- `PGHOST`: Database host
+- `PGUSER`: Service Principal Client ID (automatically set to the app's identity)
+- `PGPASSWORD`: OAuth token (automatically rotated by Databricks)
+- `PGDATABASE`: Database name
+- `PGPORT`: Database port (default: 5432)
+- `PGSSLMODE`: SSL mode (default: require)
+
+**For Local Development:**
+Set these environment variables manually in your `.env` file or shell:
+```bash
+export PGHOST="instance-15dc10d7-b8c2-4f76-bb9e-c1565eddc6a0.database.azuredatabricks.net"
+export PGUSER="your-service-principal-id"
+export PGPASSWORD="your-password-or-token"
+export PGDATABASE="databricks_postgres"
+export PGPORT="5432"
+export PGSSLMODE="require"
+export IS_LOCAL="true"
+```
 
 ### Usage in Code
 ```python
