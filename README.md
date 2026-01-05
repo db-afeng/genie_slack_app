@@ -17,6 +17,7 @@ Once deployed, users will be able to choose a Genie room which the Databricks Ap
 - **Databricks Asset Bundles:** Utilizes Databricks Asset Bundles (DABs) for streamlined deployment of the Slack app on Databricks Apps.
 - **Slack App Deployment:** Simplifies the process of deploying a Slack app within the Databricks environment.
 - **Secret Scope Setup:** Sets up a secret scope to store Slack app and bot tokens
+- **Lakebase Database Creation and Integration:** Uses Databricks Lakebase (PostgreSQL) for persistent storage of conversation tracking, ensuring chat history and context are maintained across app restarts
 
 ## Setup Instructions
 
@@ -37,5 +38,3 @@ Once deployed, users will be able to choose a Genie room which the Databricks Ap
 
 ### Disclaimers
 **Experimental DABS Features:** To automate the population of secrets within the secret scope from local environment variables, this DABS project uses [experimental post-deployment script](https://github.com/databricks/cli/pull/632) which may change at any time.
-
-**Ephemeral Context:** As this app has been created as a POC, the context and history of chats users have with the slack bot is tied to the memory of the app. This means if the app restarts, only new threads created after restart will work. To productionise the app, have an OLTP ddatabase to store the context for the app.
