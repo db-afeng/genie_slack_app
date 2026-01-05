@@ -69,7 +69,7 @@ resources:
 
 The connection uses PostgreSQL protocol via environment variables:
 
-**Environment Variables (automatically set by Databricks in production):**
+**Environment Variables (automatically set by Databricks through the Databricks Apps Resource Integration):**
 - `PGHOST`: Database host
 - `PGUSER`: Service Principal Client ID (automatically set to the app's identity)
 - `PGDATABASE`: Database name
@@ -82,18 +82,6 @@ The connection uses OAuth token authentication retrieved from the Databricks SDK
 token = w.config.oauth_token().access_token
 ```
 This token is automatically managed and rotated by Databricks.
-
-**For Local Development:**
-Set these environment variables manually in your `.env` file or shell:
-```bash
-export PGHOST="instance-15dc10d7-b8c2-4f76-bb9e-c1565eddc6a0.database.azuredatabricks.net"
-export PGUSER="your-service-principal-id"
-export PGDATABASE="databricks_postgres"
-export PGPORT="5432"
-export PGSSLMODE="require"
-export IS_LOCAL="true"
-```
-Note: The OAuth token is retrieved automatically from the Databricks SDK, so no manual password configuration is needed.
 
 ### Usage in Code
 ```python
@@ -144,21 +132,3 @@ The module includes error handling for:
 - SQL operation errors
 
 All database operations are wrapped in try-catch blocks and will log errors while gracefully degrading functionality.
-
-## Migration from In-Memory Storage
-
-The old `conv_tracker` dictionary has been completely replaced with the new database-backed system. The API is designed to be backward compatible:
-
-**Old code:**
-```python
-conv_tracker[thread_ts] = room_details
-data = conv_tracker.get(thread_ts, {})
-conv_tracker[thread_ts]["conversation_id"] = conv_id
-```
-
-**New code:**
-```python
-set_conversation(thread_ts, room_details)
-data = get_conversation(thread_ts) or {}
-update_conversation_id(thread_ts, conv_id)
-```
