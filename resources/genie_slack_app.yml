@@ -9,6 +9,9 @@ resources:
         command:
           - "python"
           - main.py
+        env:
+          - name: FOUNDATION_MODEL_ENDPOINT
+            value: ${var.FOUNDATION_MODEL_ENDPOINT}
       resources:
         - name: genie-slack-lakebase
           database:

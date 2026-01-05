@@ -3,3 +3,5 @@ variables:
     description: Slack App Token.
   TOKEN_BOT:
     description: Slack Bot Token.
+  FOUNDATION_MODEL_ENDPOINT:
+    description: Databricks Foundation Model endpoint name for generating visualizations.

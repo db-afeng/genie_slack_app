@@ -103,17 +103,19 @@ async def message_hello(message, say, client):
     print("Received: ", message, type(message))
     thinking_ts = await send_thinking_message(say)
     thread_ts = message.get("thread_ts")
+    channel_id = message.get("channel")
     
     # Get conversation details from database/memory
     conv_data = get_conversation(thread_ts)
     if not conv_data:
-        await delete_message(message.get("channel"), thinking_ts)
+        await delete_message(channel_id, thinking_ts)
         await say(text="Error: Please select a Genie room first.", thread_ts=thread_ts)
         return
     
     space_id = conv_data.get("genie_room_id")
     conv_id = conv_data.get("conversation_id")
     query = extract_text(message)
+    png_bytes = None
     
     try:
         if not conv_id:
@@ -122,12 +124,29 @@ async def message_hello(message, say, client):
         else:
             genie_message = await async_genie_create_message(space_id, conv_id, query)
 
-        text = format_genie_response(genie_message)
+        text, png_bytes = format_genie_response(genie_message)
         print("Query output:", genie_message)
 
     except TimeoutError as e:
-        text=str(e)
+        text = str(e)
     except LookupError as e:
-        text=str(e)
-    await delete_message(message.get("channel"), thinking_ts)
-    await say(text=text, thread_ts=message.get("thread_ts"))
+        text = str(e)
+    
+    await delete_message(channel_id, thinking_ts)
+    
+    # Send the text response
+    await say(text=text, thread_ts=thread_ts)
+    
+    # Upload the visualization image if available
+    if png_bytes:
+        try:
+            await client.files_upload_v2(
+                channel=channel_id,
+                thread_ts=thread_ts,
+                file=png_bytes,
+                filename="visualization.png",
+                title="Query Visualization",
+                initial_comment="📊 Visualization of the query results:"
+            )
+        except Exception as e:
+            print(f"Error uploading visualization: {e}")
