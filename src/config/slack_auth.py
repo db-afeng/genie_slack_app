@@ -1,7 +1,7 @@
 import os
 from databricks.sdk import WorkspaceClient
 
-w = WorkspaceClient() # Keep this instantiation here if it's solely for auth purposes
+w = WorkspaceClient()
 
 def get_slack_auth():
     if os.environ.get("IS_LOCAL") == 'true': # For local dev

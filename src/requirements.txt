@@ -44,6 +44,9 @@ simple-websocket==1.1.0
 six==1.17.0
 slack_bolt==1.22.0
 slack_sdk==3.34.0
+SQLAlchemy==2.0.45
+psycopg==3.2.3
+psycopg2-binary==2.9.11
 sqlglot==26.10.1
 tzdata==2025.1
 urllib3==2.3.0

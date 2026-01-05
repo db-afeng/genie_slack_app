@@ -1,0 +1,11 @@
+resources:
+  database_instances:
+    genie_slack_lakebase:
+      name: genie-slack-lakebase
+      capacity: CU_1
+  database_catalogs:
+    genie_slack_database:
+      database_instance_name: ${resources.database_instances.genie_slack_lakebase.name}
+      name: genie_slack_database
+      database_name: genie_slack_database
+      create_database_if_not_exists: true

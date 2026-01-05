@@ -7,15 +7,22 @@ from genie_integration.utils import async_genie_start_conv, async_genie_create_m
 from slack_app.utils import send_thinking_message, extract_text, delete_message
 from slack_app.app_setup import app
 
-# Global conversation tracker. TODO: To be managed differently, e.g., via a Lakebase)
-conv_tracker = {}
-# {
-#     "thread_ts": {
-#         "conversation_id": "123",
-#         "genie_room_id": "123",
-#         "genie_room_name": "name"
-#     }
-# }
+# Import database conversation tracker
+from database.conv_tracker import (
+    init_database, 
+    get_conversation, 
+    set_conversation, 
+    update_conversation_id,
+    is_local_mode
+)
+
+# Initialize database tables (only in non-local mode)
+if not is_local_mode():
+    try:
+        init_database()
+    except Exception as e:
+        print(f"Warning: Failed to initialize database: {e}")
+        print("The app will continue but database operations may fail.")
 
 @app.event("assistant_thread_started")
 async def publish_home_view(event, say, client, logger):
@@ -42,7 +49,7 @@ async def register_genie_id(body, ack,):
         "genie_room_id": selected_genie_room_id,
         "genie_room_name": selected_genie_room_name
     }
-    conv_tracker[thread_ts] = room_details
+    set_conversation(thread_ts, room_details)
 
 # Delete the home messages
 @app.action("button-action")
@@ -57,8 +64,8 @@ async def handle_some_action(say, ack, body, logger):
 
     logger.info(f"Confirm button pressed for message {message_ts} in channel {channel_id}, thread {thread_ts}.")
 
-    # Retrieve the stored selection for this specific thread from conv_tracker
-    stored_selection_data = conv_tracker.get(thread_ts, {})
+    # Retrieve the stored selection for this specific thread from database/memory
+    stored_selection_data = get_conversation(thread_ts) or {}
     selected_room_id = stored_selection_data.get("genie_room_id")
     selected_room_name = stored_selection_data.get("genie_room_name")
 
@@ -96,13 +103,22 @@ async def message_hello(message, say, client):
     print("Received: ", message, type(message))
     thinking_ts = await send_thinking_message(say)
     thread_ts = message.get("thread_ts")
-    space_id = conv_tracker[thread_ts].get("genie_room_id")
-    conv_id = conv_tracker[thread_ts].get("conversation_id")
+    
+    # Get conversation details from database/memory
+    conv_data = get_conversation(thread_ts)
+    if not conv_data:
+        await delete_message(message.get("channel"), thinking_ts)
+        await say(text="Error: Please select a Genie room first.", thread_ts=thread_ts)
+        return
+    
+    space_id = conv_data.get("genie_room_id")
+    conv_id = conv_data.get("conversation_id")
     query = extract_text(message)
+    
     try:
         if not conv_id:
             genie_message = await async_genie_start_conv(space_id, query)
-            conv_tracker[thread_ts]["conversation_id"] = genie_message.conversation_id
+            update_conversation_id(thread_ts, genie_message.conversation_id)
         else:
             genie_message = await async_genie_create_message(space_id, conv_id, query)
 
