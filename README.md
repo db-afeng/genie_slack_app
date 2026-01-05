@@ -19,6 +19,9 @@ Once deployed, users will be able to choose a Genie room which the Databricks Ap
 - **Secret Scope Setup:** Sets up a secret scope to store Slack app and bot tokens
 - **Lakebase Database Creation and Integration:** Uses Databricks Lakebase (PostgreSQL) for persistent storage of conversation tracking, ensuring chat history and context are maintained across app restarts
 
+## High Level Architecture
+![Architecture](assets/arch.png)
+
 ## Setup Instructions
 
 ### Prerequisites
