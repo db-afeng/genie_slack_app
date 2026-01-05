@@ -1,0 +1,5 @@
+resources:
+  database_instances:
+    genie_slack_lakebase:
+      name: genie-slack-lakebase
+      capacity: CU_1
