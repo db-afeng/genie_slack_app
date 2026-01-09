@@ -13,8 +13,24 @@ from database.conv_tracker import (
     get_conversation, 
     set_conversation, 
     update_conversation_id,
-    is_local_mode
+    is_local_mode,
+    set_message,
+    get_message
 )
+
+# Import genie client for feedback
+from genie_integration.client import genie
+
+# Try to import GenieFeedbackRating, fall back to simple string enum if not available
+try:
+    from databricks.sdk.service.dashboards import GenieFeedbackRating
+except ImportError:
+    from enum import Enum
+    class GenieFeedbackRating(Enum):
+        """Fallback enum for Genie feedback ratings."""
+        POSITIVE = "POSITIVE"
+        NEGATIVE = "NEGATIVE"
+        NONE = "NONE"
 
 # Initialize database tables (only in non-local mode)
 if not is_local_mode():
@@ -103,17 +119,19 @@ async def message_hello(message, say, client):
     print("Received: ", message, type(message))
     thinking_ts = await send_thinking_message(say)
     thread_ts = message.get("thread_ts")
+    channel_id = message.get("channel")
     
     # Get conversation details from database/memory
     conv_data = get_conversation(thread_ts)
     if not conv_data:
-        await delete_message(message.get("channel"), thinking_ts)
+        await delete_message(channel_id, thinking_ts)
         await say(text="Error: Please select a Genie room first.", thread_ts=thread_ts)
         return
     
     space_id = conv_data.get("genie_room_id")
     conv_id = conv_data.get("conversation_id")
     query = extract_text(message)
+    genie_message = None
     
     try:
         if not conv_id:
@@ -129,5 +147,92 @@ async def message_hello(message, say, client):
         text=str(e)
     except LookupError as e:
         text=str(e)
-    await delete_message(message.get("channel"), thinking_ts)
-    await say(text=text, thread_ts=message.get("thread_ts"))
+    
+    await delete_message(channel_id, thinking_ts)
+    response = await say(text=text, thread_ts=thread_ts)
+    
+    # Store the message mapping for feedback tracking
+    if genie_message and response:
+        slack_message_ts = response.get("ts")
+        set_message(
+            channel_id=channel_id,
+            message_ts=slack_message_ts,
+            space_id=genie_message.space_id,
+            conversation_id=genie_message.conversation_id,
+            message_id=genie_message.message_id
+        )
+
+
+# Handle reaction added events for feedback
+@app.event("reaction_added")
+async def handle_reaction_added(event, logger):
+    """Handle thumbs up/down reactions to send feedback to Genie."""
+    reaction = event.get("reaction")
+    item = event.get("item", {})
+    # Only process thumbsup and thumbsdown reactions on messages
+    if item.get("type") != "message":
+        return
+    
+    if reaction not in ("+1", "-1", "thumbsup", "thumbsdown"):
+        return
+    
+    channel_id = item.get("channel")
+    message_ts = item.get("ts")
+    
+    # Look up the Genie message details
+    message_data = get_message(channel_id, message_ts)
+    if not message_data:
+        logger.debug(f"No Genie message found for Slack message {message_ts} in channel {channel_id}")
+        return
+    
+    # Determine the rating
+    if reaction in ("+1", "thumbsup"):
+        rating = GenieFeedbackRating.POSITIVE
+    else:  # -1, thumbsdown
+        rating = GenieFeedbackRating.NEGATIVE
+    
+    try:
+        genie.send_message_feedback(
+            space_id=message_data["space_id"],
+            conversation_id=message_data["conversation_id"],
+            message_id=message_data["message_id"],
+            rating=rating
+        )
+        logger.info(f"Sent {rating.value} feedback for message {message_data['message_id']}")
+    except Exception as e:
+        logger.error(f"Failed to send feedback: {e}")
+
+
+# Handle reaction removed events to reset feedback
+@app.event("reaction_removed")
+async def handle_reaction_removed(event, logger):
+    """Handle removal of thumbs up/down reactions to reset feedback."""
+    reaction = event.get("reaction")
+    item = event.get("item", {})
+    
+    # Only process thumbsup and thumbsdown reactions on messages
+    if item.get("type") != "message":
+        return
+    
+    if reaction not in ("+1", "-1", "thumbsup", "thumbsdown"):
+        return
+    
+    channel_id = item.get("channel")
+    message_ts = item.get("ts")
+    
+    # Look up the Genie message details
+    message_data = get_message(channel_id, message_ts)
+    if not message_data:
+        logger.debug(f"No Genie message found for Slack message {message_ts} in channel {channel_id}")
+        return
+    
+    try:
+        genie.send_message_feedback(
+            space_id=message_data["space_id"],
+            conversation_id=message_data["conversation_id"],
+            message_id=message_data["message_id"],
+            rating=GenieFeedbackRating.NONE
+        )
+        logger.info(f"Reset feedback for message {message_data['message_id']}")
+    except Exception as e:
+        logger.error(f"Failed to reset feedback: {e}")

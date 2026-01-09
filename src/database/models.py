@@ -37,3 +37,35 @@ class ConversationTracker(Base):
             "genie_room_id": self.genie_room_id,
             "genie_room_name": self.genie_room_name
         }
+
+
+class MessageTracker(Base):
+    """
+    Model for tracking Slack message to Genie message mappings.
+    Used for sending feedback (thumbs up/down) to Genie.
+    
+    Attributes:
+        slack_message_ts: Slack message timestamp (primary key)
+        slack_channel_id: Slack channel ID (primary key)
+        space_id: Genie space/room ID
+        conversation_id: Genie conversation ID
+        message_id: Genie message ID
+        created_at: Timestamp when the record was created
+    """
+    __tablename__ = "message_tracker"
+    __table_args__ = {'schema': SCHEMA_NAME}
+    
+    slack_message_ts = Column(String, primary_key=True)
+    slack_channel_id = Column(String, primary_key=True)
+    space_id = Column(String, nullable=False)
+    conversation_id = Column(String, nullable=False)
+    message_id = Column(String, nullable=False)
+    created_at = Column(DateTime, server_default=func.current_timestamp())
+    
+    def to_dict(self):
+        """Convert model to dictionary format."""
+        return {
+            "space_id": self.space_id,
+            "conversation_id": self.conversation_id,
+            "message_id": self.message_id
+        }

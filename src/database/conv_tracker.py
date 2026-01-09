@@ -4,11 +4,12 @@ from typing import Optional, Dict
 from sqlalchemy import text
 from sqlalchemy.exc import SQLAlchemyError
 from database.connection import get_session, get_engine
-from database.models import Base, ConversationTracker, SCHEMA_NAME
+from database.models import Base, ConversationTracker, MessageTracker, SCHEMA_NAME
 
 
-# In-memory tracker for local development
+# In-memory trackers for local development
 _local_conv_tracker = {}
+_local_message_tracker = {}  # Key: (channel_id, message_ts), Value: {space_id, conversation_id, message_id}
 
 
 def is_local_mode():
@@ -163,6 +164,106 @@ def clear_all_conversations():
             session.commit()
         except SQLAlchemyError as e:
             print(f"Error clearing conversations: {e}")
+            session.rollback()
+            raise
+        finally:
+            session.close()
+
+
+# ==================== Message Tracking Functions ====================
+# These functions track the mapping between Slack messages and Genie messages
+# to enable feedback (thumbs up/down) functionality.
+
+
+def set_message(channel_id: str, message_ts: str, space_id: str, conversation_id: str, message_id: str):
+    """
+    Store a mapping between a Slack message and a Genie message.
+    
+    Args:
+        channel_id: Slack channel ID
+        message_ts: Slack message timestamp
+        space_id: Genie space/room ID
+        conversation_id: Genie conversation ID
+        message_id: Genie message ID
+    """
+    if is_local_mode():
+        _local_message_tracker[(channel_id, message_ts)] = {
+            "space_id": space_id,
+            "conversation_id": conversation_id,
+            "message_id": message_id
+        }
+    else:
+        session = get_session()
+        try:
+            tracker = MessageTracker(
+                slack_channel_id=channel_id,
+                slack_message_ts=message_ts,
+                space_id=space_id,
+                conversation_id=conversation_id,
+                message_id=message_id
+            )
+            session.merge(tracker)  # Use merge to handle upsert
+            session.commit()
+        except SQLAlchemyError as e:
+            print(f"Error setting message: {e}")
+            session.rollback()
+            raise
+        finally:
+            session.close()
+
+
+def get_message(channel_id: str, message_ts: str) -> Optional[Dict]:
+    """
+    Get Genie message details for a Slack message.
+    
+    Args:
+        channel_id: Slack channel ID
+        message_ts: Slack message timestamp
+        
+    Returns:
+        Dict with space_id, conversation_id, message_id or None if not found
+    """
+    if is_local_mode():
+        return _local_message_tracker.get((channel_id, message_ts))
+    else:
+        session = get_session()
+        try:
+            tracker = session.query(MessageTracker).filter_by(
+                slack_channel_id=channel_id,
+                slack_message_ts=message_ts
+            ).first()
+            return tracker.to_dict() if tracker else None
+        except SQLAlchemyError as e:
+            print(f"Error getting message: {e}")
+            return None
+        finally:
+            session.close()
+
+
+def delete_message_tracking(channel_id: str, message_ts: str):
+    """
+    Delete tracking for a Slack message.
+    
+    Args:
+        channel_id: Slack channel ID
+        message_ts: Slack message timestamp
+    """
+    if is_local_mode():
+        key = (channel_id, message_ts)
+        if key in _local_message_tracker:
+            del _local_message_tracker[key]
+    else:
+        session = get_session()
+        try:
+            tracker = session.query(MessageTracker).filter_by(
+                slack_channel_id=channel_id,
+                slack_message_ts=message_ts
+            ).first()
+            if tracker:
+                session.delete(tracker)
+                session.commit()
+        except SQLAlchemyError as e:
+            print(f"Error deleting message tracking: {e}")
             session.rollback()
             raise
         finally:
