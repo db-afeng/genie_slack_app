@@ -18,6 +18,7 @@ Once deployed, users will be able to choose a Genie room which the Databricks Ap
 - **Slack App Deployment:** Simplifies the process of deploying a Slack app within the Databricks environment.
 - **Secret Scope Setup:** Sets up a secret scope to store Slack app and bot tokens
 - **Lakebase Database Creation and Integration:** Uses Databricks Lakebase (PostgreSQL) for persistent storage of conversation tracking, ensuring chat history and context are maintained across app restarts
+- **Feedback Mechanism:** Provide positive or negative feedback synced to the monitoring tab of your Genie Room with 👍 and 👎 reactions
 
 ## High Level Architecture
 ![Architecture](assets/arch.png)
