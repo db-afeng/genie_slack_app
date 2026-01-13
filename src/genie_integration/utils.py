@@ -36,17 +36,79 @@ def async_genie_start_conv(*args, **kwargs):
 def async_genie_create_message(*args, **kwargs):
     return genie.create_message(*args, **kwargs)
 
-def format_genie_response(genie_message: GenieMessage) -> str:
-    query_desc = query_code = table_text = None
+def _create_rich_text_cell(text: str, bold: bool = False) -> dict:
+    """Create a rich_text cell for a Slack table."""
+    style = {"bold": True} if bold else {}
+    element = {"type": "text", "text": str(text)}
+    if style:
+        element["style"] = style
+    return {
+        "type": "rich_text",
+        "elements": [{
+            "type": "rich_text_section",
+            "elements": [element]
+        }]
+    }
+
+
+def _create_table_block(columns: list, data_array: list) -> dict:
+    """Create a Slack table block from columns and data."""
+    rows = []
+    
+    # Header row with bold text
+    header_row = [_create_rich_text_cell(col, bold=True) for col in columns]
+    rows.append(header_row)
+    
+    # Data rows
+    for row in data_array:
+        data_row = [_create_rich_text_cell(cell) for cell in row]
+        rows.append(data_row)
+    
+    return {
+        "type": "table",
+        "rows": rows
+    }
+
+
+def format_genie_response(genie_message: GenieMessage) -> dict:
+    """
+    Format a Genie response into Slack blocks.
+    
+    Returns:
+        dict with keys:
+            - blocks: list of Slack blocks for the message
+            - text: fallback plain text
+            - sql_query: SQL query code (if any) for file attachment
+    """
+    blocks = []
+    query_code = None
+    text_parts = []
 
     query = genie_message.attachments[0].query
     text = genie_message.attachments[0].text
 
+    # Add text content as a section block
     text_content = text.content if text else None
+    if text_content:
+        text_parts.append(text_content)
+        blocks.append({
+            "type": "section",
+            "text": {"type": "mrkdwn", "text": text_content}
+        })
+
     if query:
         query_desc = query.description if query else None
         query_code = query.query if query else None
 
+        # Add query description
+        if query_desc:
+            text_parts.append(query_desc)
+            blocks.append({
+                "type": "section",
+                "text": {"type": "mrkdwn", "text": query_desc}
+            })
+
+        # Get query results and create table block
         query_result = genie.get_message_attachment_query_result(
             genie_message.space_id,
             genie_message.conversation_id,
@@ -55,27 +117,16 @@ def format_genie_response(genie_message: GenieMessage) -> str:
         )
         columns = [col.name for col in query_result.statement_response.manifest.schema.columns]
         data_array = query_result.statement_response.result.data_array
-        # Determine maximum width for each column (consider header and row values)
-        widths = [len(col) for col in columns]
-        for row in data_array:
-            for i, cell in enumerate(row):
-                widths[i] = max(widths[i], len(str(cell)))
 
-        # Create the header row
-        header = " | ".join(col.ljust(widths[i]) for i, col in enumerate(columns))
-        # Create a separator row
-        separator = "-|-".join("-" * widths[i] for i in range(len(columns)))
+        # Create table block
+        table_block = _create_table_block(columns, data_array)
+        blocks.append(table_block)
 
-        # Build the rows of the table
-        rows = [header, separator]
-        for row in data_array:
-            row_str = " | ".join(str(cell).ljust(widths[i]) for i, cell in enumerate(row))
-            rows.append(row_str)
-
-        # Wrap the table in triple backticks to format as a code block
-        table_text =  "```\n" + "\n".join(rows) + "\n```"
-    text_result = "\n".join([s for s in [text_content, query_desc, table_text, query_code] if s])
-    return text_result
+    return {
+        "blocks": blocks,
+        "text": "\n".join(text_parts) if text_parts else "Genie response",
+        "sql_query": query_code
+    }
 
 
 def format_genie_selection():

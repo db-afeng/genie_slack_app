@@ -50,6 +50,7 @@ class MessageTracker(Base):
         space_id: Genie space/room ID
         conversation_id: Genie conversation ID
         message_id: Genie message ID
+        current_feedback: Current feedback state ("positive", "negative", or None)
         created_at: Timestamp when the record was created
     """
     __tablename__ = "message_tracker"
@@ -60,6 +61,7 @@ class MessageTracker(Base):
     space_id = Column(String, nullable=False)
     conversation_id = Column(String, nullable=False)
     message_id = Column(String, nullable=False)
+    current_feedback = Column(String, nullable=True)
     created_at = Column(DateTime, server_default=func.current_timestamp())
     
     def to_dict(self):
@@ -67,5 +69,6 @@ class MessageTracker(Base):
         return {
             "space_id": self.space_id,
             "conversation_id": self.conversation_id,
-            "message_id": self.message_id
+            "message_id": self.message_id,
+            "current_feedback": self.current_feedback
         }

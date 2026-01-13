@@ -175,7 +175,7 @@ def clear_all_conversations():
 # to enable feedback (thumbs up/down) functionality.
 
 
-def set_message(channel_id: str, message_ts: str, space_id: str, conversation_id: str, message_id: str):
+def set_message(channel_id: str, message_ts: str, space_id: str, conversation_id: str, message_id: str, current_feedback: str = None):
     """
     Store a mapping between a Slack message and a Genie message.
     
@@ -185,12 +185,14 @@ def set_message(channel_id: str, message_ts: str, space_id: str, conversation_id
         space_id: Genie space/room ID
         conversation_id: Genie conversation ID
         message_id: Genie message ID
+        current_feedback: Current feedback state ("positive", "negative", or None)
     """
     if is_local_mode():
         _local_message_tracker[(channel_id, message_ts)] = {
             "space_id": space_id,
             "conversation_id": conversation_id,
-            "message_id": message_id
+            "message_id": message_id,
+            "current_feedback": current_feedback
         }
     else:
         session = get_session()
@@ -200,7 +202,8 @@ def set_message(channel_id: str, message_ts: str, space_id: str, conversation_id
                 slack_message_ts=message_ts,
                 space_id=space_id,
                 conversation_id=conversation_id,
-                message_id=message_id
+                message_id=message_id,
+                current_feedback=current_feedback
             )
             session.merge(tracker)  # Use merge to handle upsert
             session.commit()

@@ -132,6 +132,7 @@ async def message_hello(message, say, client):
     conv_id = conv_data.get("conversation_id")
     query = extract_text(message)
     genie_message = None
+    response_data = None
     
     try:
         if not conv_id:
@@ -140,16 +141,39 @@ async def message_hello(message, say, client):
         else:
             genie_message = await async_genie_create_message(space_id, conv_id, query)
 
-        text = format_genie_response(genie_message)
+        response_data = format_genie_response(genie_message)
         print("Query output:", genie_message)
 
     except TimeoutError as e:
-        text=str(e)
+        response_data = {"blocks": [], "text": str(e), "sql_query": None}
     except LookupError as e:
-        text=str(e)
+        response_data = {"blocks": [], "text": str(e), "sql_query": None}
     
     await delete_message(channel_id, thinking_ts)
-    response = await say(text=text, thread_ts=thread_ts)
+    
+    # Send message with blocks
+    if response_data.get("blocks"):
+        response = await say(
+            text=response_data["text"],
+            blocks=response_data["blocks"],
+            thread_ts=thread_ts
+        )
+    else:
+        response = await say(text=response_data["text"], thread_ts=thread_ts)
+    
+    # Upload SQL query as a minimized .sql file attachment
+    if response_data.get("sql_query"):
+        try:
+            await client.files_upload_v2(
+                channel=channel_id,
+                thread_ts=thread_ts,
+                content=response_data["sql_query"],
+                filename="query.sql",
+                title="SQL Query",
+                snippet_type="sql"
+            )
+        except Exception as e:
+            print(f"Failed to upload SQL file: {e}")
     
     # Store the message mapping for feedback tracking
     if genie_message and response:
