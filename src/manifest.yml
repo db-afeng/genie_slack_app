@@ -1,32 +1,38 @@
 display_information:
-  name: Dbx Bot
+  name: Genie
+  description: Ask away!
+  background_color: "#4d384d"
 features:
   app_home:
     home_tab_enabled: true
     messages_tab_enabled: true
     messages_tab_read_only_enabled: false
   bot_user:
-    display_name: DBX Bot
+    display_name: Genie
     always_online: true
   assistant_view:
-    assistant_description: answer dbx
+    assistant_description: Uses Databricks Genie to answer questions from data in the Lakehouse
     suggested_prompts: []
 oauth_config:
   scopes:
     bot:
+      - assistant:write
       - chat:write
+      - files:write
       - im:history
       - im:read
       - im:write
+      - users.profile:read
       - users:read
       - users:write
-      - users.profile:read
-      - assistant:write
+      - reactions:read
 settings:
   event_subscriptions:
     bot_events:
-      - message.im
       - assistant_thread_started
+      - message.im
+      - reaction_added
+      - reaction_removed
   interactivity:
     is_enabled: true
   org_deploy_enabled: false

@@ -1,0 +1,8 @@
+command:
+  - "python"
+  - main.py
+env:
+  - name: TOKEN_APP
+    valueFrom: slack-bot-token-app
+  - name: TOKEN_BOT
+    valueFrom: slack-bot-token-bot

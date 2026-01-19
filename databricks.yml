@@ -18,4 +18,4 @@ targets:
     mode: development
     default: true
     workspace:
-      host: <workspace_host_url> # Put your workspace here
+      host: https://adb-984752964297111.11.azuredatabricks.net/ # Put your workspace here
