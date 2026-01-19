@@ -23,6 +23,11 @@ Once deployed, users will be able to choose a Genie room which the Databricks Ap
 ## High Level Architecture
 ![Architecture](assets/arch.png)
 
+## Sequence Diagram
+The following diagram illustrates the network flow between the User, Slack App, and Databricks Genie:
+
+![Sequence Diagram](assets/sequence.svg)
+
 ## Setup Instructions
 
 ### Prerequisites
